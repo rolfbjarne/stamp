@@ -10,18 +10,22 @@ static char msg [2048];
 struct timeval start_time;
 struct timeval previous_time;
 
+static void
+get_stamp (struct timeval* time, struct tm* result)
+{
+	struct timezone tz;
+
+	gettimeofday (time, &tz);
+	time->tv_sec += tz.tz_minuteswest * 60;
+	localtime_r (&time->tv_sec, result);
+}
 void
 writeline ()
 {
 	struct timeval time;
-	struct timezone tz;
 	struct tm result;
 
-	gettimeofday (&time, &tz);
-
-	time.tv_sec += tz.tz_minuteswest * 60;
-
-	localtime_r (&time.tv_sec, &result);
+	get_stamp (&time, &result);
 
 	buffer [index] = 0;
 
@@ -38,10 +42,10 @@ writeline ()
 	if (start_us == 0)
 		diff_start_us = 0;
 
-	len = snprintf (msg, sizeof (msg), "%.2i:%.2i:%.2i.%.3i (%+3i.%.7i %+3i.%.7i): %s\n", 
+	len = snprintf (msg, sizeof (msg), "%.2i:%.2i:%.2i.%.3i (%+3i.%.6i %+3i.%.6i): %s\n", 
 		result.tm_hour + 1, result.tm_min, result.tm_sec, time.tv_usec / 1000, 
-		(int) (diff_start_us    / 1000000), (int) ((diff_start_us    - (diff_start_us    / 1000000) * 100000)),
-		(int) (diff_previous_us / 1000000),	(int) ((diff_previous_us - (diff_previous_us / 1000000) * 100000)),
+		(int) (diff_start_us    / 1000000), (int) (diff_start_us    % 1000000),
+		(int) (diff_previous_us / 1000000),	(int) (diff_previous_us % 1000000),
 		buffer);
 
 	write (1 /* STDOUT_FILENO */, msg, len + 1);
@@ -55,10 +59,13 @@ writeline ()
 int main (int argv, char** argc)
 {
 	tzset ();
-	previous_time.tv_sec = 0;
-	previous_time.tv_usec = 0;
-	start_time.tv_sec = 0;
-	start_time.tv_usec = 0;
+
+	struct timeval time;
+	struct tm result;
+	get_stamp (&time, &result);
+
+	previous_time = time;
+	start_time = time;
 
 	while (1) {
 		ssize_t rv = read (0 /* STDIN_FILENO */, buffer + index, 1);
