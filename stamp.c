@@ -48,7 +48,7 @@ writeline ()
 		(int) (diff_previous_us / 1000000),	(int) (diff_previous_us % 1000000),
 		buffer);
 
-	write (1 /* STDOUT_FILENO */, msg, len + 1);
+	write (1 /* STDOUT_FILENO */, msg, len);
 	index = 0;
 
 	previous_time = time;
