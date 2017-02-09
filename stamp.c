@@ -3,9 +3,9 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-static char buffer [1024];
+static char buffer [10240];
 static int index = 0;
-static char msg [2048];
+static char msg [20480];
 
 struct timeval start_time;
 struct timeval previous_time;
